@@ -15,10 +15,10 @@ huggingface-cli download HAERAE-HUB/KMMLU --repo-type dataset --local-dir <LOCAL
 huggingface-cli download HAERAE-HUB/HRM8K --repo-type dataset --local-dir <LOCAL_HRM8K_PATH>
 
 # Calibration dataset for quantization
-huggingface-cli download neuralmagic/LLM_compression_calibration repo-type dataset <LOCAL_CALIB_PATH>
+huggingface-cli download neuralmagic/LLM_compression_calibration repo-type dataset --local-dir <LOCAL_CALIB_PATH>
 
 # Calibration dataset for layer pruning
-huggingface-cli download wikitext --repo-type dataset <LOCAL_WIKITEXT_PATH>
+huggingface-cli download wikitext --repo-type dataset --local-dir <LOCAL_WIKITEXT_PATH>
 ```
 
 # 3. Quantize or Prune the model & Benchmark
