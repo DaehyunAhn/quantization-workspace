@@ -1,0 +1,16 @@
+[submodule "lm-evaluation-harness"]
+	path = lm-evaluation-harness
+	url = https://github.com/DaehyunAhn/lm-evaluation-harness.git
+	branch = SQZB
+[submodule "FunctionChat-Bench"]
+	path = FunctionChat-Bench
+	url = https://github.com/DaehyunAhn/FunctionChat-Bench.git
+	branch = SQZB
+[submodule "LogicKor"]
+	path = LogicKor
+	url = https://github.com/DaehyunAhn/LogicKor.git
+	branch = SQZB
+[submodule "SLEB"]
+	path = SLEB
+	url = https://github.com/DaehyunAhn/SLEB.git
+	branch = SQZB
