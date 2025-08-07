@@ -16,7 +16,7 @@ RUN pip install vllm==0.9.1 llmcompressor==0.5.2 autoawq datasets fire transform
 
 RUN git clone --recurse-submodules https://github.com/DaehyunAhn/quantization-workspace.git
 
-RUN pip install -r /workspace/quantization-workspace/LogicKor/requirements.txt
+RUN pip install -r /workspace/quantization-workspace/FunctionChat-Bench/requirements.txt
 RUN cd /workspace/quantization-workspace/lm-evaluation-harness && pip install -e . && cd ..
 RUN mkdir -p /workspace/quantization-workspace/models
 RUN mkdir -p /workspace/quantization-workspace/outputs
