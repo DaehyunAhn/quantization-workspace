@@ -9,5 +9,6 @@ quantization_stage:
             type: "int"
             symmetric: true
             strategy: "group"
+            group_size: 128
             observer: "minmax"
           targets: ["Linear"]

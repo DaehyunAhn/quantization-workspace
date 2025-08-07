@@ -9,7 +9,7 @@ HRM8K_DATASET_PATH=$7
 QUANT_CONFIG_FILES=("configs/llm_compressor/w4a16_g128_minmax.yml" \
                 "configs/llm_compressor/w4a16_g128_mse.yml" \
                 "configs/llm_compressor/w4a16_minmax.yml" \
-                configs/llm_compressor/w4a16_mse.yml) 
+                "configs/llm_compressor/w4a16_mse.yml")
 
 check_server_health() {
     local max_attempts=60  # 10 minutes timeout
@@ -153,6 +153,7 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
     VLLM_USE_V1=0 lm_eval --model vllm --tasks haerae,kmmlu,hrm8k --num_fewshot 0 --batch_size 4 \
         --model_args pretrained=${QUANTIZED_MODEL_PATH},gpu_memory_utilization=0.8,tensor_parallel_size=${TP} \
         --output ${OUTPUT_DIR}/lm_evals.json
+    mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
 
     # # 2. Run LogicKor
     python LogicKor/generator.py --model $QUANTIZED_MODEL_PATH --gpu_devices $(generate_gpu_devices $TP) --strategy default \

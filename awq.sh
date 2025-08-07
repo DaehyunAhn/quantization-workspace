@@ -151,6 +151,7 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
     VLLM_USE_V1=0 lm_eval --model vllm --tasks haerae,kmmlu,hrm8k --num_fewshot 0 --batch_size 4 \
         --model_args pretrained=${QUANTIZED_MODEL_PATH},gpu_memory_utilization=0.8,tensor_parallel_size=${TP} \
         --output ${OUTPUT_DIR}/lm_evals.json
+    mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
 
     # # 2. Run LogicKor
     python LogicKor/generator.py --model $QUANTIZED_MODEL_PATH --gpu_devices $(generate_gpu_devices $TP) --strategy default \

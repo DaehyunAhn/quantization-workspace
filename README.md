@@ -8,11 +8,11 @@ docker build -t [TAG_NAME] .
 
 # 2. Download the model & required datasets
 ```
-huggingface-cli download Qwen/Qwen3-32B <LOCAL_MODEL_PATH>
+huggingface-cli download Qwen/Qwen3-32B --local-dir <LOCAL_MODEL_PATH>
 
-huggingface-cli download HAERAE-HUB/HAE_RAE_BENCH_1.1 --repo-type dataset <LOCAL_HAERAE_PATH>
-huggingface-cli download HAERAE-HUB/KMMLU --repo-type dataset <LOCAL_KMMLU_PATH>
-huggingface-cli download HAERAE-HUB/HRM8K --repo-type dataset <LOCAL_HRM8K_PATH>
+huggingface-cli download HAERAE-HUB/HAE_RAE_BENCH_1.1 --repo-type dataset --local-dir <LOCAL_HAERAE_PATH>
+huggingface-cli download HAERAE-HUB/KMMLU --repo-type dataset --local-dir <LOCAL_KMMLU_PATH>
+huggingface-cli download HAERAE-HUB/HRM8K --repo-type dataset --local-dir <LOCAL_HRM8K_PATH>
 
 # Calibration dataset for quantization
 huggingface-cli download neuralmagic/LLM_compression_calibration repo-type dataset <LOCAL_CALIB_PATH>
