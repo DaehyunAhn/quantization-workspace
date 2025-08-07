@@ -22,3 +22,4 @@ RUN mkdir -p /workspace/quantization-workspace/models
 RUN mkdir -p /workspace/quantization-workspace/outputs
 
 WORKDIR /workspace/quantization-workspace
+CMD sleep infinity
