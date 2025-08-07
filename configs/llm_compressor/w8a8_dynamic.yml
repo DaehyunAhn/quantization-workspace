@@ -1,0 +1,20 @@
+default_stage:
+  default_modifiers:
+    QuantizationModifier:
+      ignore: [lm_head]
+      config_groups:
+        group_0:
+          targets: [Linear]
+          weights:
+            num_bits: 8
+            type: int
+            strategy: channel
+            dynamic: false
+            observer: minmax
+            symmetric: true
+          input_activations:
+            num_bits: 8
+            type: int
+            strategy: token
+            dynamic: true
+            symmetric: true

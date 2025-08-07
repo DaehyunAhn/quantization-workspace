@@ -1,0 +1,13 @@
+quantization_stage:
+  quantization_modifiers:
+    GPTQModifier:
+      ignore: ["lm_head"]
+      config_groups:
+        group_0:
+          weights:
+            num_bits: 4
+            type: "int"
+            symmetric: true
+            strategy: "group"
+            observer: "mse"
+          targets: ["Linear"]
