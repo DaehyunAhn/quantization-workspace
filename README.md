@@ -39,22 +39,22 @@ bash awq.sh <LOCAL_MODEL_PATH> <TP_SIZE> <OPENAI_API_KEY> <LOCAL_CALIB_PATH> <LO
 bash sleb.sh <LOCAL_MODEL_PATH> <TP_SIZE> <OPENAI_API_KEY> <LOCAL_WIKITEXT_PATH>/wikitext-2-raw-v1 <LOCAL_HAERAE_PATH> <LOCAL_KMMLU_PATH> <LOCAL_HRM8K_PATH>
 ```
 
-# 3-2. Quantize or Prune the model & Benchmark (Online)
+# 3-2. Quantize or Prune the model & Benchmark (Offline)
 ```
 # For FP8 (Dynamic, static, KV Cache) Quantization
-bash fp8.sh <LOCAL_MODEL_PATH> <TP_SIZE>
+bash fp8_offline.sh <LOCAL_MODEL_PATH> <TP_SIZE>
 
 # For INT8 (Dynamic, static) Quantization
-bash int8.sh <LOCAL_MODEL_PATH> <TP_SIZE> 
+bash int8_offline.sh <LOCAL_MODEL_PATH> <TP_SIZE> 
 
 # For GPTQ (W4A16) Quantization
-bash gptq.sh <LOCAL_MODEL_PATH> <TP_SIZE>
+bash gptq_offline.sh <LOCAL_MODEL_PATH> <TP_SIZE>
 
 # For AWQ (W4A16) Quantization
-bash awq.sh <LOCAL_MODEL_PATH> <TP_SIZE>
+bash awq_offline.sh <LOCAL_MODEL_PATH> <TP_SIZE>
 
 # For layer-pruning
-bash sleb.sh <LOCAL_MODEL_PATH> <TP_SIZE>
+bash sleb_offline.sh <LOCAL_MODEL_PATH> <TP_SIZE>
 ```
 # 4. (Optional) Save the benchmark results to csv
 ```
