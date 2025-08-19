@@ -1,10 +1,10 @@
 MODEL_PATH=$1
 TP=$2
-API_KEY=$3
-CALIBRATION_DATASET_PATH=$4
-HAERAE_DATASET_PATH=$5
-KMMLU_DATASET_PATH=$6
-HRM8K_DATASET_PATH=$7
+
+CALIBRATION_DATASET_PATH="/workspace/quantization-workspace/datasets/LLM_compression_calibration"
+HAERAE_DATASET_PATH="/workspace/quantization-workspace/datasets/HAE_RAE_BENCH_1.1"
+KMMLU_DATASET_PATH="/workspace/quantization-workspace/datasets/KMMLU"
+HRM8K_DATASET_PATH="/workspace/quantization-workspace/datasets/HRM8K"
 
 QUANT_CONFIG_FILES=("configs/llm_compressor/fp8_w8a8_dynamic.yml" \
                 "configs/llm_compressor/fp8_w8a8_static.yml" \
@@ -153,60 +153,6 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
         --model_args pretrained=${QUANTIZED_MODEL_PATH},gpu_memory_utilization=0.8,tensor_parallel_size=${TP} \
         --output ${OUTPUT_DIR}/lm_evals.json
     mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
-
-    # 2. Run LogicKor
-    python LogicKor/generator.py --model $QUANTIZED_MODEL_PATH --gpu_devices $(generate_gpu_devices $TP) --strategy default \
-                                -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -q LogicKor/questions.jsonl
-    python LogicKor/evaluator.py -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -k ${API_KEY} -t 30 \
-                                -e LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")
-    python LogicKor/score.py -p LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")/default.jsonl -o ${OUTPUT_DIR}/logickor.jsonl
-
-    # 3. Run Functionchat-Bench
-    vllm serve ${QUANTIZED_MODEL_PATH} \
-        --tensor-parallel-size ${TP} \
-        --max-num-seqs 256 \
-        --max-model-len 4096 \
-        --tool-call-parser hermes \
-        --disable-log-requests \
-        --reasoning-parser qwen3 \
-        --enable-auto-tool-choice \
-        >& ${OUTPUT_DIR}/vllm_server.log &
-
-        SERVER_PID=$!
-        echo "Server started with PID: $SERVER_PID"
-        
-        # Wait for server to be ready
-        if ! check_server_health; then
-            echo "Failed to start server, skipping this configuration"
-            cleanup_server
-            continue
-        fi
-
-    python FunctionChat-Bench/evaluate.py singlecall \
-        --input_path FunctionChat-Bench/data/FunctionChat-Singlecall.jsonl \
-        --tools_type all \
-        --system_prompt_path FunctionChat-Bench/data/system_prompt.txt \
-        --temperature 0.1 \
-        --model inhouse \
-        --base_url http://localhost:8000/v1/ \
-        --api_key ${API_KEY} \
-        --model_path ${QUANTIZED_MODEL_PATH}
- 
-    python evaluate.py dialog \
-        --input_path FunctionChat-Bench/data/FunctionChat-Dialog.jsonl \
-        --system_prompt_path FunctionChat-Bench/data/system_prompt.txt \
-        --temperature 0.1 \
-        --model inhouse \
-        --base_url http://localhost:8000/v1/ \
-        --api_key ${API_KEY} \
-        --model_path ${QUANTIZED_MODEL_PATH}
-    
-    mv FunctionChat-Bench/output/* ${OUTPUT_DIR}
-
-    cleanup_server
-    SERVER_PID=""
-    echo "Waiting a bit before next configuration..."
-    sleep 10
 done
 
 # Restore FunctionChatBench config with API key and dataset path of lm-evaluation-harness

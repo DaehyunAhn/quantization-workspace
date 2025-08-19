@@ -1,14 +1,13 @@
 MODEL_PATH=$1
 TP=$2
-API_KEY=$3
-CALIBRATION_DATASET_PATH=$4
-HAERAE_DATASET_PATH=$5
-KMMLU_DATASET_PATH=$6
-HRM8K_DATASET_PATH=$7
 
-QUANT_CONFIG_FILES=("configs/llm_compressor/fp8_w8a8_dynamic.yml" \
-                "configs/llm_compressor/fp8_w8a8_static.yml" \
-                "configs/llm_compressor/fp8_w8a8kv8_static.yml")
+CALIBRATION_DATASET_PATH="/workspace/quantization-workspace/datasets/LLM_compression_calibration"
+HAERAE_DATASET_PATH="/workspace/quantization-workspace/datasets/HAE_RAE_BENCH_1.1"
+KMMLU_DATASET_PATH="/workspace/quantization-workspace/datasets/KMMLU"
+HRM8K_DATASET_PATH="/workspace/quantization-workspace/datasets/HRM8K"
+
+QUANT_CONFIG_FILES=("configs/autoawq/w4a16_g64.json" \
+                "configs/autoawq/w4a16_g32.json") 
 
 check_server_health() {
     local max_attempts=60  # 10 minutes timeout
@@ -131,10 +130,10 @@ update_dataset_path
 # Quantize model
 for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
     # Extract config name from file path for output directory
-    CONFIG_NAME=$(basename "$QUANT_CONFIG_FILE" .yml)
+    CONFIG_NAME=$(basename "$QUANT_CONFIG_FILE" .json)
     OUTPUT_DIR="outputs/${CONFIG_NAME}"
     QUANTIZED_MODEL_PATH="models/$(basename "$MODEL_PATH")_${CONFIG_NAME}"
-
+    
     # Create output directory if it doesn't exist
     mkdir -p "$OUTPUT_DIR"
 
@@ -142,11 +141,11 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
         --save_dir $QUANTIZED_MODEL_PATH \
         --recipe $QUANT_CONFIG_FILE \
         --dataset $CALIBRATION_DATASET_PATH \
-        --compressor_type llm_compressor \
+        --compressor_type awq \
         --split train \
-        --column messages \
-        --num_calibration_samples 1024 \
-        --max_sequence_length 8192
+        --column text \
+        --num_calibration_samples 512 \
+        --max_sequence_length 2048
 
     # 1. Run lm-evaluation-harness (HAERAE_1.1, KMMLU, HRM8K)
     VLLM_USE_V1=0 lm_eval --model vllm --tasks haerae,kmmlu,hrm8k --num_fewshot 0 --batch_size 4 \
@@ -154,59 +153,6 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
         --output ${OUTPUT_DIR}/lm_evals.json
     mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
 
-    # 2. Run LogicKor
-    python LogicKor/generator.py --model $QUANTIZED_MODEL_PATH --gpu_devices $(generate_gpu_devices $TP) --strategy default \
-                                -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -q LogicKor/questions.jsonl
-    python LogicKor/evaluator.py -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -k ${API_KEY} -t 30 \
-                                -e LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")
-    python LogicKor/score.py -p LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")/default.jsonl -o ${OUTPUT_DIR}/logickor.jsonl
-
-    # 3. Run Functionchat-Bench
-    vllm serve ${QUANTIZED_MODEL_PATH} \
-        --tensor-parallel-size ${TP} \
-        --max-num-seqs 256 \
-        --max-model-len 4096 \
-        --tool-call-parser hermes \
-        --disable-log-requests \
-        --reasoning-parser qwen3 \
-        --enable-auto-tool-choice \
-        >& ${OUTPUT_DIR}/vllm_server.log &
-
-        SERVER_PID=$!
-        echo "Server started with PID: $SERVER_PID"
-        
-        # Wait for server to be ready
-        if ! check_server_health; then
-            echo "Failed to start server, skipping this configuration"
-            cleanup_server
-            continue
-        fi
-
-    python FunctionChat-Bench/evaluate.py singlecall \
-        --input_path FunctionChat-Bench/data/FunctionChat-Singlecall.jsonl \
-        --tools_type all \
-        --system_prompt_path FunctionChat-Bench/data/system_prompt.txt \
-        --temperature 0.1 \
-        --model inhouse \
-        --base_url http://localhost:8000/v1/ \
-        --api_key ${API_KEY} \
-        --model_path ${QUANTIZED_MODEL_PATH}
- 
-    python evaluate.py dialog \
-        --input_path FunctionChat-Bench/data/FunctionChat-Dialog.jsonl \
-        --system_prompt_path FunctionChat-Bench/data/system_prompt.txt \
-        --temperature 0.1 \
-        --model inhouse \
-        --base_url http://localhost:8000/v1/ \
-        --api_key ${API_KEY} \
-        --model_path ${QUANTIZED_MODEL_PATH}
-    
-    mv FunctionChat-Bench/output/* ${OUTPUT_DIR}
-
-    cleanup_server
-    SERVER_PID=""
-    echo "Waiting a bit before next configuration..."
-    sleep 10
 done
 
 # Restore FunctionChatBench config with API key and dataset path of lm-evaluation-harness

@@ -155,14 +155,14 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
         --output ${OUTPUT_DIR}/lm_evals.json
     mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
 
-    # # 2. Run LogicKor
+    # 2. Run LogicKor
     python LogicKor/generator.py --model $QUANTIZED_MODEL_PATH --gpu_devices $(generate_gpu_devices $TP) --strategy default \
                                 -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -q LogicKor/questions.jsonl
     python LogicKor/evaluator.py -o LogicKor/generated/$(basename "$QUANTIZED_MODEL_PATH") -k ${API_KEY} -t 30 \
                                 -e LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")
     python LogicKor/score.py -p LogicKor/evaluated/$(basename "$QUANTIZED_MODEL_PATH")/default.jsonl -o ${OUTPUT_DIR}/logickor.jsonl
 
-    3. Run Functionchat-Bench
+    # 3. Run Functionchat-Bench
     vllm serve ${QUANTIZED_MODEL_PATH} \
         --tensor-parallel-size ${TP} \
         --max-num-seqs 256 \
