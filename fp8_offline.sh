@@ -10,64 +10,6 @@ QUANT_CONFIG_FILES=("configs/llm_compressor/fp8_w8a8_dynamic.yml" \
                 "configs/llm_compressor/fp8_w8a8_static.yml" \
                 "configs/llm_compressor/fp8_w8a8kv8_static.yml")
 
-check_server_health() {
-    local max_attempts=60  # 10 minutes timeout
-    local attempt=1
-    
-    echo "Checking server health..."
-    while [ $attempt -le $max_attempts ]; do
-        if curl -s http://localhost:8000/v1/models > /dev/null 2>&1; then
-            echo "Server is ready!"
-            return 0
-        fi
-        echo "Attempt $attempt/$max_attempts: Server not ready yet, waiting..."
-        sleep 10
-        ((attempt++))
-    done
-    
-    echo "Server failed to start within timeout"
-    return 1
-}
-
-# Function to cleanup server
-cleanup_server() {
-    echo "Shutting down server..."
-    if [ ! -z "$SERVER_PID" ]; then
-        kill $SERVER_PID 
-    fi
-    # Also kill any remaining vllm processes
-    pkill -f "vllm serve"
-
-    echo "Waiting for server to shutdown..."
-    if [ ! -z "$SERVER_PID" ]; then
-        wait $SERVER_PID
-    fi
-    sleep 10
-    echo "Server shutdown completed"
-}
-
-update_functionchat_config() {
-    local config_file="FunctionChat-Bench/config/openai.cfg"
-    local temp_file="${config_file}.tmp"
-
-    cp "$config_file" "${config_file}.backup"
-    
-    sed "s/__YOUR_OPENAI_KEY__/$API_KEY/g" "$config_file" > "$temp_file"
-    mv "$temp_file" "$config_file"
-    
-    echo "Updated FunctionChat-Bench config with API key"
-}
-
-restore_functionchat_config() {
-    local config_file="FunctionChat-Bench/config/openai.cfg"
-    local backup_file="${config_file}.backup"
-
-    mv "$backup_file" "$config_file"
-    
-    echo "Restore FunctionChat-Bench config"
-}
-
-
 update_dataset_path() {
     local haerae_config_file="lm-evaluation-harness/lm_eval/tasks/haerae/_default_haerae_yaml"
     local kmmlu_config_file="lm-evaluation-harness/lm_eval/tasks/kmmlu/default/_default_kmmlu_yaml"
@@ -105,27 +47,7 @@ restore_dataset_path() {
     echo "Restore dataset path of lm-evaluation-harness"
 }
 
-# Function to generate GPU devices string based on TP
-generate_gpu_devices() {
-    local tp=$1
-    local devices=""
-    
-    for ((i=0; i<tp; i++)); do
-        if [ $i -eq 0 ]; then
-            devices="$i"
-        else
-            devices="$devices,$i"
-        fi
-    done
-    
-    echo "$devices"
-}
-
-# Set trap to cleanup on script exit
-trap cleanup_server EXIT
-
-# Update FunctionChatBench config with API key and dataset path of lm-evaluation-harness
-update_functionchat_config
+# Update dataset path of lm-evaluation-harness
 update_dataset_path
 
 # Quantize model
@@ -155,6 +77,5 @@ for QUANT_CONFIG_FILE in ${QUANT_CONFIG_FILES[@]}; do
     mv ${OUTPUT_DIR}/lm_evals*.json ${OUTPUT_DIR}/lm_evals.json
 done
 
-# Restore FunctionChatBench config with API key and dataset path of lm-evaluation-harness
-restore_functionchat_config
+# Restore dataset path of lm-evaluation-harness
 restore_dataset_path
